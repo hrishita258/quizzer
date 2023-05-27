@@ -1,0 +1,298 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String   @id @default(uuid()) @db.Uuid
+  email            String   @unique
+  password         String
+  name             String
+  contactNumber    String?  @unique
+  githubProfile    String?
+  linkedinProfile  String?
+  isActive         Boolean  @default(true)
+  role             Role
+  gender           Gender
+  semester         Int?
+  enrollmentYear   Int?
+  isAdmin          Boolean  @default(false)
+  profileImage     String?
+  specializationId String?  @db.Uuid
+  collegeId        String?  @db.Uuid
+  createdAt        DateTime @default(now()) @db.Timestamptz()
+  updatedAt        DateTime @default(now()) @updatedAt @db.Timestamptz()
+
+  specialization Specialization?         @relation(fields: [specializationId], references: [id])
+  College        College?                @relation(fields: [collegeId], references: [id])
+  Activities     ActivityLogs[]
+  quiz           QuizAssigendToStudent[]
+  scores         StudenQuizScores[]
+  createdQuiz    Quiz[]
+  refreshTokens  RefreshTokens[]
+  Class          Class[]
+  Analytics      Analytics[]
+}
+
+model Specialization {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String
+  collegeId String   @db.Uuid
+  createdAt DateTime @default(now()) @db.Timestamptz()
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz()
+
+  College College @relation(fields: [collegeId], references: [id])
+  User    User[]
+  Quiz    Quiz[]
+}
+
+model College {
+  id             String   @id @default(uuid()) @db.Uuid
+  name           String   @unique
+  email          String   @unique
+  contactNumber  String?  @unique
+  address        String?
+  logoSrc        String?
+  directorName   String
+  collegeWebsite String?
+  description    String?  @db.Text
+  createdAt      DateTime @default(now()) @db.Timestamptz()
+  updatedAt      DateTime @default(now()) @updatedAt @db.Timestamptz()
+
+  Users           User[]
+  specializations Specialization[]
+  quizes          Quiz[]
+}
+
+model Quiz {
+  id               String    @id @default(uuid()) @db.Uuid
+  name             String    @unique
+  duration         Int?
+  description      String?   @db.Text
+  isPublished      Boolean
+  publishedAt      DateTime?
+  image            String?
+  specializationId String    @db.Uuid
+  createdAt        DateTime  @default(now()) @db.Timestamptz()
+  updatedAt        DateTime  @default(now()) @updatedAt @db.Timestamptz()
+  collegeId        String    @db.Uuid
+  createdById      String    @db.Uuid
+
+  Questions      QuizQuestions[]
+  user           QuizAssigendToStudent[]
+  score          StudenQuizScores[]
+  User           User                    @relation(fields: [createdById], references: [id])
+  College        College                 @relation(fields: [collegeId], references: [id])
+  Specialization Specialization          @relation(fields: [specializationId], references: [id])
+}
+
+model QuizQuestions {
+  id        String           @id @default(uuid()) @db.Uuid
+  question  String           @db.Text
+  type      QuizQuestionType
+  quizId    String           @db.Uuid
+  createdAt DateTime         @default(now()) @db.Timestamptz()
+  updatedAt DateTime         @default(now()) @updatedAt @db.Timestamptz()
+
+  Choices QuizQuestionsChoices[]
+  Quiz    Quiz?                  @relation(fields: [quizId], references: [id])
+}
+
+model QuizQuestionsChoices {
+  id              String   @id @default(uuid()) @db.Uuid
+  quizQuestionsId String   @db.Uuid
+  text            String   @db.Text
+  isCorrect       Boolean
+  createdAt       DateTime @default(now()) @db.Timestamptz()
+  updatedAt       DateTime @default(now()) @updatedAt @db.Timestamptz()
+
+  QuizQuestions QuizQuestions? @relation(fields: [quizQuestionsId], references: [id])
+}
+
+model QuizAssigendToStudent {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @db.Uuid
+  quizId       String   @db.Uuid
+  assignedAt   DateTime @default(now()) @db.Timestamptz()
+  assignedById String   @db.Uuid
+
+  Quiz Quiz @relation(fields: [quizId], references: [id])
+  User User @relation(fields: [userId], references: [id])
+}
+
+model ActivityLogs {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  activity  String
+  type      String
+  createdAt DateTime @default(now()) @db.Timestamptz()
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz()
+
+  User User @relation(fields: [userId], references: [id])
+}
+
+model StudenQuizScores {
+  id               String   @id @default(uuid()) @db.Uuid
+  duration         Decimal
+  score            Decimal
+  isPassed         Boolean
+  attemptedAt      DateTime
+  correctCount     Int
+  incorrectCount   Int
+  unAttemptedCount Int
+  userId           String   @db.Uuid
+  quizId           String   @db.Uuid
+  createdAt        DateTime @default(now()) @db.Timestamptz()
+  updatedAt        DateTime @default(now()) @updatedAt @db.Timestamptz()
+
+  User User @relation(fields: [userId], references: [id])
+  Quiz Quiz @relation(fields: [quizId], references: [id])
+}
+
+model RefreshTokens {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @db.Uuid
+  userAgent String   @db.Text
+  isActive  Boolean  @default(true)
+  token     String   @unique @db.Text
+  createdAt DateTime @default(now()) @db.Timestamptz()
+  updatedAt DateTime @default(now()) @updatedAt @db.Timestamptz()
+
+  User User @relation(fields: [userId], references: [id])
+}
+
+// Course table for scheduling classes
+model Course {
+  id          String  @id @default(uuid()) @db.Uuid
+  name        String  @unique
+  description String?
+  credits     Int?
+  // ... other course-related fields
+  Classes     Class[] // Courses can have many classes
+}
+
+// Class table for individual class sessions
+model Class {
+  id String @id @default(uuid()) @db.Uuid
+
+  startTime DateTime
+  endTime   DateTime
+  date      DateTime
+  // ... other class-related fields
+  Course    Course?     @relation(fields: [courseId], references: [id])
+  courseId  String?     @db.Uuid
+  User      User?       @relation(fields: [userId], references: [id])
+  userId    String?     @db.Uuid
+  Room      Room?       @relation(fields: [roomId], references: [id])
+  roomId    String?     @db.Uuid
+  Analytics Analytics[]
+}
+
+// Room table for scheduling rooms
+model Room {
+  id        String      @id @default(uuid()) @db.Uuid
+  name      String
+  capacity  Int
+  // ... other room-related fields
+  Classes   Class[]
+  Analytics Analytics[]
+}
+
+// Report table for generating reports
+model Report {
+  id   String     @id @default(uuid()) @db.Uuid
+  type ReportType
+  // ... other report-related fields
+}
+
+// Enum for different report types
+enum ReportType {
+  COURSES
+  FACULTY
+  STUDENTS
+  SCHEDULES
+}
+
+// Integration table for integrating with other systems
+model Integration {
+  id   String          @id @default(uuid()) @db.Uuid
+  type IntegrationType
+  // ... other integration-related fields
+}
+
+// Enum for different integration types
+enum IntegrationType {
+  STUDENT_INFO
+  FACULTY_DB
+  ROOM_RESERVATION
+}
+
+// Analytics table for tracking system usage
+model Analytics {
+  id        String             @id @default(uuid()) @db.Uuid
+  eventType AnalyticsEventType
+  dateTime  DateTime
+
+  eventDetails String?
+  ipAddress    String?
+  Class        Class?  @relation(fields: [classId], references: [id])
+  classId      String? @db.Uuid
+  User         User?   @relation(fields: [userId], references: [id])
+  userId       String? @db.Uuid
+  Room         Room?   @relation(fields: [roomId], references: [id])
+  roomId       String? @db.Uuid
+}
+
+enum QuizQuestionType {
+  Single
+  MCQ
+}
+
+enum Gender {
+  Male
+  Female
+  other
+}
+
+enum Role {
+  student
+  faculty
+  spoc
+}
+
+enum AnalyticsEventType {
+  LOGIN
+  LOGOUT
+  COURSE_CREATE
+  COURSE_UPDATE
+  COURSE_DELETE
+  CLASS_CREATE
+  CLASS_UPDATE
+  CLASS_DELETE
+  ROOM_CREATE
+  ROOM_UPDATE
+  ROOM_DELETE
+  FACULTY_CREATE
+  FACULTY_UPDATE
+  FACULTY_DELETE
+  STUDENT_CREATE
+  STUDENT_UPDATE
+  STUDENT_DELETE
+  SCHEDULE_CREATE
+  SCHEDULE_UPDATE
+  SCHEDULE_DELETE
+  REPORT_GENERATE
+  INTEGRATION_CREATE
+  INTEGRATION_UPDATE
+  INTEGRATION_DELETE
+  FEEDBACK_CREATE
+  FEEDBACK_UPDATE
+  FEEDBACK_DELETE
+}

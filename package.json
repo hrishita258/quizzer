@@ -1,0 +1,24 @@
+{
+  "name": "@musical-octo-winner/monorepo",
+  "version": "1.0.0",
+  "author": "Himanshu Tak",
+  "private": true,
+  "description": "",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "quizzerApp": "cd packages/quiz-app && npm run dev",
+    "quizzerApi": "cd packages/api && npm run devStart"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thimanshu3/musical-octo-winner.git"
+  },
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/thimanshu3/musical-octo-winner/issues"
+  },
+  "homepage": "https://github.com/thimanshu3/musical-octo-winner#readme",
+  "workspaces": [
+    "./packages/*"
+  ]
+}
